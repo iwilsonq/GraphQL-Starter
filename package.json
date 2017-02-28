@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "nodemon index.js"
+    "start": "nodemon index.js",
+    "seed": "node -e 'require(\"babel-register\"); require(\"./src/seedData\");'"
   },
   "author": "",
   "license": "ISC",

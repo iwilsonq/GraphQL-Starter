@@ -6,8 +6,8 @@ export const db = new sqlite3.Database('./db.sqlite');
 
 export const getSql = query => {
   return new Promise((resolve, reject) => {
-    console.log('TEXT:', query.text);
-    console.log('VALUES:', query.values);
+    console.log(query.text);
+    console.log(query.values);
     db.all(query.text, query.values, (err, rows) => {
       console.log(err, rows);
       if (err) {
