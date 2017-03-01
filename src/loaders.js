@@ -72,7 +72,6 @@ export const getUserNodeWithFriends = nodeId => {
 };
 
 export const getPostIdsForUser = (userSource, args, context) => {
-  console.log('DEATHDEATHDEATH');
   let { after, first } = args;
 
   if (!first) {
@@ -84,7 +83,7 @@ export const getPostIdsForUser = (userSource, args, context) => {
     .select(table.id, table.created_at, table.level)
     .where(table.user_id.equals(userSource.id))
     .order(table.created_at.asc)
-    .limit(first + 1);
+    .limit(first + 10);
 
   if (after) {
     const [ id, created_at ] = after.split(':');
@@ -93,9 +92,15 @@ export const getPostIdsForUser = (userSource, args, context) => {
       .where(table.id.gt(id));
   }
 
-  return database.getSql(query.toQuery())
-    .then(allRows => {
-      const rows = allRows.slice(0, first);
+  return Promise.all([
+    database.getSql(query.toQuery()),
+    getFriendshipLevels(context)
+  ]).then(([allRows, friendshipLevels]) => {
+      allRows = allRows.filter(row => {
+        return canAccessLevel(friendshipLevels[userSource.id], row.level);
+      });
+
+      const rows = allRows.slice(0,first);
 
       rows.forEach(row => {
         row.__tableName = tables.posts.getName();
@@ -118,3 +123,30 @@ export const getPostIdsForUser = (userSource, args, context) => {
       return { rows, pageInfo };
     });
 };
+
+const getFriendshipLevels = nodeId => {
+  const { dbId } = tables.splitNodeId(nodeId);
+
+  const table = tables.usersFriends;
+  let query = table
+    .select(table.star())
+    .where(table.user_id_a.equals(dbId));
+
+  return database.getSql(query.toQuery()).then(rows => {
+    const levelMap = {};
+    rows.forEach(row => {
+      levelMap[row.user_id_b] = row.level;
+    });
+
+    return levelMap;
+  });
+};
+
+const canAccessLevel = (viewerLevel, contentLevel) => {
+  const levels = ['public', 'acquaintence', 'friend', 'top'];
+
+  const viewerLevelIndex = levels.indexOf(viewerLevel);
+  const contentLevelIndex = levels.indexOf(contentLevel);
+
+  return viewerLevelIndex >= contentLevelIndex;
+}
