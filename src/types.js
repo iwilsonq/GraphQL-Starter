@@ -9,6 +9,8 @@ import {
   GraphQLInt
 } from 'graphql';
 
+import { connectionDefinitions } from 'graphql-relay';
+
 import * as tables from './tables';
 import * as loaders from './loaders';
 
@@ -43,18 +45,6 @@ const PostEdgeType = new GraphQLObjectType({
     }
   }
 });
-
-const PostsConnectionType = new GraphQLObjectType({
-  name: 'PostsConnection',
-  fields: {
-    pageInfo: {
-      type: new GraphQLNonNull(PageInfoType)
-    },
-    edges: {
-      type: new GraphQLList(PostEdgeType)
-    }
-  }
-})
 
 export const NodeInterface = new GraphQLInterfaceType({
   name: 'Node',
@@ -148,4 +138,8 @@ export const PostType = new GraphQLObjectType({
       type: new GraphQLNonNull(GraphQLString)
     }
   }
+});
+
+const { connectionType: PostsConnectionType } = connectionDefinitions({
+  nodeType: PostType
 });
